@@ -11,11 +11,7 @@ const app = express();
 // middleware
 app.use(express.json());
 app.use(cors());
-app.use(
-  cors({
-    origin: "https://swing-for-good.vercel.app"
-  })
-);
+
 // routes
 app.use("/api/auth", authRoutes);
 
