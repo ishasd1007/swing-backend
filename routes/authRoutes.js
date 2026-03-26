@@ -7,62 +7,66 @@ const router = express.Router();
 
 // REGISTER
 router.post("/register", async (req, res) => {
-  console.log("BODY:", req.body); // 🔥 DEBUG LINE
+  console.log("BODY:", req.body);
 
   try {
     const { name, email, password } = req.body;
 
+    // ✅ SAFE VALIDATION
     if (!name || !email || !password) {
-      console.log("VALIDATION FAILED"); // 🔥 DEBUG
       return res.status(400).json({ message: "All fields required" });
     }
 
-    const lowerEmail = email.toLowerCase();
+    const lowerEmail = email?.toLowerCase();
 
     const existingUser = await User.findOne({ email: lowerEmail });
     if (existingUser) {
-      console.log("USER EXISTS"); // 🔥 DEBUG
       return res.status(400).json({ message: "User already exists" });
     }
 
     const hashed = await bcrypt.hash(password, 10);
 
-    await User.create({
+    const newUser = await User.create({
       name,
       email: lowerEmail,
       password: hashed
     });
 
-    console.log("USER CREATED SUCCESS"); // 🔥 DEBUG
-
-    res.json({ message: "Registered successfully" });
+    res.json({
+      message: "Registered successfully",
+      user: newUser
+    });
 
   } catch (err) {
     console.log("REGISTER ERROR:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: err.message }); // 🔥 REAL ERROR
   }
 });
 
+
 // LOGIN
 router.post("/login", async (req, res) => {
-  console.log("LOGIN BODY:", req.body); // 🔥 DEBUG
+  console.log("LOGIN BODY:", req.body);
 
   try {
     const { email, password } = req.body;
 
-    const lowerEmail = email.toLowerCase();
+    // ✅ SAFE VALIDATION
+    if (!email || !password) {
+      return res.status(400).json({ message: "All fields required" });
+    }
+
+    const lowerEmail = email?.toLowerCase();
 
     const user = await User.findOne({ email: lowerEmail });
 
     if (!user) {
-      console.log("USER NOT FOUND"); // 🔥 DEBUG
       return res.status(400).json({ message: "User not found" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      console.log("WRONG PASSWORD"); // 🔥 DEBUG
       return res.status(400).json({ message: "Wrong password" });
     }
 
@@ -70,8 +74,6 @@ router.post("/login", async (req, res) => {
       { id: user._id },
       process.env.JWT_SECRET || "secret123"
     );
-
-    console.log("LOGIN SUCCESS"); // 🔥 DEBUG
 
     res.json({
       token,
@@ -83,7 +85,7 @@ router.post("/login", async (req, res) => {
 
   } catch (err) {
     console.log("LOGIN ERROR:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: err.message }); // 🔥 REAL ERROR
   }
 });
 
